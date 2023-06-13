@@ -9,6 +9,7 @@ typedef struct {
   int duration;
 } ProcessEvent;
 
+
 typedef struct {
   ListItem list;
   int pid;
@@ -16,6 +17,6 @@ typedef struct {
   ListHead events;
 } FakeProcess;
 
-int FakeProcess_load(FakeProcess* p, const char* filename);
 
+int FakeProcess_load(FakeProcess* p, const char* filename);
 int FakeProcess_save(const FakeProcess* p, const char* filename);

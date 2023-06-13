@@ -27,7 +27,7 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
     if (num_tokens==2 && p->pid<0){
       p->pid=pid;
       p->arrival_time=arrival_time;
-      goto next_round;
+      continue;
     }
 
     num_tokens=sscanf(buffer, "C %d", &duration);
@@ -40,7 +40,7 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
       List_pushBack(&p->events, (ListItem*)e);
       num_events++;
 
-      goto next_round;
+      continue;
     }
 
     num_tokens=sscanf(buffer, "I %d", &duration);
@@ -53,9 +53,9 @@ int FakeProcess_load(FakeProcess* p, const char* filename) {
       List_pushBack(&p->events, (ListItem*)e);
       num_events++;
 
-      goto next_round;
+      continue;
     }
-  next_round:
+
   }
 
   if (buffer) free(buffer);

@@ -3,12 +3,13 @@
 #include <assert.h>
 #include "fake_os.h"
 
-void FakeOS_init(FakeOS* os) {
-  os->running=(FakePCB**)malloc(sizeof(FakePCB*)*NUMBERS_OF_CPU);
+void FakeOS_init(FakeOS* os, int num_of_cpu) {
+  os->running=(FakePCB**)malloc(sizeof(FakePCB*)*num_of_cpu);
   List_init(&os->ready);
   List_init(&os->waiting);
 
   os->timer=0;
+  os->num_of_cpu=num_of_cpu;
   os->schedule_fn=0;
   os->schedule_args=(SchedArgs*)malloc(sizeof(SchedArgs));
 
@@ -16,12 +17,12 @@ void FakeOS_init(FakeOS* os) {
 }
 
 void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
-  // Il deve effettivamente avere l'arrival_time corrente
+  // Il processo deve effettivamente avere l'arrival_time corrente
   assert((p->arrival_time==os->timer) && "time mismatch in creation");
   // Il pid non deve essere uguale a quello degli eventuali processi in running
-  for (int i=0;i<NUMBERS_OF_CPU;i++) { assert((!(os->running[i]) || ((os->running[i])->pid!=p->pid)) && "pid taken"); }
+  for (int i=0;i<os->num_of_cpu;i++) { assert((!(os->running[i]) || ((os->running[i])->pid!=p->pid)) && "pid taken"); }
 
-  // Controlla che non ci sia gia il pid nella coda di ready
+  // Controlla che non ci sia gia il pid tra i processi nella coda di ready
   ListItem* aux=os->ready.first;
   while(aux){
     FakePCB* pcb=(FakePCB*)aux;
@@ -29,7 +30,7 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
     aux=aux->next;
   }
 
-  // Controlla che non ci sia gia il pid nella coda di waiting
+  // Controlla che non ci sia gia il pid tra i processi nella coda di waiting
   aux=os->waiting.first;
   while(aux){
     FakePCB* pcb=(FakePCB*)aux;
@@ -40,19 +41,19 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
   // Il processo deve avere almeno un evento
   assert(p->events.first && "process without events");
 
-  // Crea il processo
+  // Se ha pasato tutti i controlli iniziallizza il processo
   FakePCB* new_pcb=(FakePCB*) malloc(sizeof(FakePCB));
   new_pcb->list.next=new_pcb->list.prev=0;
   new_pcb->pid=p->pid;
   new_pcb->chunk_start_recorder=0;
-  new_pcb->chunk_length_sum=0;
-  new_pcb->predicted_job_length=10;
+  new_pcb->chunk_duration_sum=0;
+  new_pcb->predicted_duration=os->schedule_args->quantum;
   new_pcb->events=p->events;
 
   // Assegna il processo all'opportuna coda in base al tipo del suo primo evento
   ProcessEvent* e=(ProcessEvent*)new_pcb->events.first;
+  // Assegnazione ordinata in ready
   if (e->type==CPU){
-    // Assegnazione ordinata in ready
     ListItem* aux=os->ready.first;
     int inserted=0;
 
@@ -65,7 +66,7 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
       aux=aux->next;
       FakePCB* next_pcb=(FakePCB*)aux;
 
-      if (new_pcb->predicted_job_length<ready_pcb->predicted_job_length) {
+      if (new_pcb->predicted_duration<ready_pcb->predicted_duration) {
         List_pushFront(&os->ready, (ListItem*) new_pcb);
         break;
       }
@@ -74,7 +75,7 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
           List_pushBack(&os->ready, (ListItem*) new_pcb);
           break;
         }
-        else if (new_pcb->predicted_job_length<next_pcb->predicted_job_length) {
+        else if (new_pcb->predicted_duration<next_pcb->predicted_duration) {
           List_insert(&os->ready, (ListItem*)ready_pcb, (ListItem*)new_pcb);
           break;
         }
@@ -82,9 +83,8 @@ void FakeOS_createProcess(FakeOS* os, FakeProcess* p) {
       }
     }
   }
-  else if (e->type==IO) {
-    List_pushBack(&os->waiting, (ListItem*) new_pcb);
-  }
+  // Assegnazione in waiting
+  else if (e->type==IO) { List_pushBack(&os->waiting, (ListItem*) new_pcb); }
   else assert(0 && "illegal resource");
 }
 
@@ -114,11 +114,9 @@ void FakeOS_simStep(FakeOS* os){
     ProcessEvent* e=(ProcessEvent*) pcb->events.first;
     assert(e->type==IO); printf("\nWaiting %d - ", pcb->pid);
     e->duration--;
-    if (e->duration) printf("ending in %02d",e->duration);
-    else printf("time expired");
 
-    if (e->duration==0){
-      printf(" --> ");
+    if (!e->duration){
+      printf("time expired --> ");
       List_popFront(&pcb->events);
       free(e);
       List_detach(&os->waiting, (ListItem*)pcb);
@@ -140,37 +138,35 @@ void FakeOS_simStep(FakeOS* os){
       }
     }
     else {
-      printf(" - Predicted job duration: %d",pcb->predicted_job_length);
+      printf("ending in %02d - predicted duration: %f", e->duration, pcb->predicted_duration);
     }
   }
   printf("\n");
 
-  // Controlla lo stato dei processi in running
-  for (int i=0;i<NUMBERS_OF_CPU;i++) {
-    printf("\nCPU(%d)",i);
+  // Controlla lo stato dei processi in running e li aggiorna di conseguenza
+  for (int i=0;i<os->num_of_cpu;i++) {
     FakePCB* current_running=os->running[i];
     if (current_running) {
       ProcessEvent* e=(ProcessEvent*) current_running->events.first;
-      assert(e->type==CPU); printf(": Running %d - ", current_running->pid);
-      e->duration--; 
-      if (e->duration) printf("ending in %02d",e->duration);
-      else printf("time expired");
+      assert(e->type==CPU); printf("\nCPU(%d): Running %d - ", i, current_running->pid);
+      e->duration--;
 
-      if (e->duration==0){
-        printf(" --> ");
+      if (!e->duration){
+        printf("time expired --> ");
         List_popFront(&current_running->events);
         free(e);
 
         if (!current_running->events.first) {
-          printf("ending process");
+          printf("the process has finished");
           free(current_running);
         }
         else {
           e=(ProcessEvent*) current_running->events.first;
-          if (e->type == CPU){
-            current_running->chunk_length_sum+=os->timer-current_running->chunk_start_recorder;
 
-            // Assegnazione ordinata in ready
+          // Assegnazione ordinata in ready
+          if (e->type == CPU){
+            current_running->chunk_duration_sum+=os->timer-current_running->chunk_start_recorder;
+
             ListItem* aux=os->ready.first;
             int inserted=0;
 
@@ -183,7 +179,7 @@ void FakeOS_simStep(FakeOS* os){
               aux=aux->next;
               FakePCB* next_pcb=(FakePCB*)aux;
 
-              if (current_running->predicted_job_length<=ready_pcb->predicted_job_length) {
+              if (current_running->predicted_duration<=ready_pcb->predicted_duration) {
                 List_pushFront(&os->ready, (ListItem*) current_running);
                 break;
               }
@@ -192,7 +188,7 @@ void FakeOS_simStep(FakeOS* os){
                   List_pushBack(&os->ready, (ListItem*) current_running);
                   break;
                 }
-                else if (current_running->predicted_job_length<next_pcb->predicted_job_length) {
+                else if (current_running->predicted_duration<next_pcb->predicted_duration) {
                   List_insert(&os->ready, (ListItem*)ready_pcb, (ListItem*)current_running);
                   break;
                 }
@@ -202,22 +198,21 @@ void FakeOS_simStep(FakeOS* os){
 
             printf("moving to ready list");
           }
+          // Assegnazione in waiting e calcolo della predizione della durata
           else {
-            int measured_time=os->timer-current_running->chunk_start_recorder+current_running->chunk_length_sum;
-            int predicted_time=DECAY_COEFFICIENT*(measured_time)+(1-DECAY_COEFFICIENT)*(current_running->predicted_job_length);
-            current_running->predicted_job_length=(int)predicted_time;
-            current_running->chunk_length_sum=0;
+            int measured_duration=os->timer-current_running->chunk_start_recorder+current_running->chunk_duration_sum;
+            float predicted_time=(os->schedule_args->decay_coefficient)*(measured_duration)+(1-(os->schedule_args->decay_coefficient))*(current_running->predicted_duration);
+            current_running->predicted_duration=predicted_time;
+            current_running->chunk_duration_sum=0;
             List_pushBack(&os->waiting, (ListItem*) current_running);
             printf("moving to waiting list");
           }
         }
 
-        // Rimuove il processo running corrente che verrà riselezionato successivamente
+        // Rimuove il processo dal running corrente che eventualmente verrà riselezionato in futuro
         os->running[i] = 0;
       }
-    }
-    else {
-      printf(": not running");
+      else { printf("ending in %02d", e->duration); }
     }
   }
   printf("\n");
@@ -227,20 +222,20 @@ void FakeOS_simStep(FakeOS* os){
   while(aux) {
     FakePCB* pcb=(FakePCB*)aux;
     aux=aux->next;
-    printf("\nReady %d - Predicted job duration: %d", pcb->pid, pcb->predicted_job_length);
+    printf("\nReady %d - predicted duration: %f", pcb->pid, pcb->predicted_duration);
   }
   printf("\n");
 
-  // Controlla quali running sono terminati e se è impostato uno scheduler lo chiama per scegliere il running mancante
+  // Controlla quali running sono terminati e se è impostato uno scheduler lo chiama per scegliere i running mancanti
   if (os->schedule_fn) {
-    for (int i=0;i<NUMBERS_OF_CPU;i++) {
+    for (int i=0;i<os->num_of_cpu;i++) {
       os->schedule_args->CPU_index=i;
       if (!os->running[i]) (*os->schedule_fn)(os, os->schedule_args);
     }
   }
 
   // Se lo scheduler non ha impostato i running terminati, verrà impostato l'eventuale primo processo in ready
-  for (int i=0;i<NUMBERS_OF_CPU;i++) {
+  for (int i=0;i<os->num_of_cpu;i++) {
     if (!os->running[i] && os->ready.first) os->running[i]=(FakePCB*) List_popFront(&os->ready);
   }
 
@@ -248,4 +243,4 @@ void FakeOS_simStep(FakeOS* os){
   printf("\n------------------------------------------------------------------\n");
 }
 
-void FakeOS_destroy(FakeOS* os) { }
+void FakeOS_destroy(FakeOS* os) {}
