@@ -2,11 +2,13 @@ CC=gcc
 CCOPTS=--std=gnu99 -Wall -D_LIST_DEBUG_
 AR=ar
 
-OBJS=linked_list.o\
-     fake_process.o\
-     fake_os.o
+OBJS= linked_list/linked_list.o\
+      fake_process/fake_process.o\
+      fake_os/fake_os.o
 
-HEADERS= linked_list.h fake_process.h
+HEADERS= linked_list/linked_list.h\
+         fake_process/fake_process.h\
+         fake_os/fake_os.h
 
 BINS= sched_sim
 
