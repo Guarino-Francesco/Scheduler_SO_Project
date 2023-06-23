@@ -21,7 +21,7 @@ ListItem* List_find(ListHead* head, ListItem* item) {
 
 // Inserisce l'elemento "item" di seguito all'elemento "prev" nella lista "head"
 ListItem* List_insert(ListHead* head, ListItem* prev, ListItem* item) {
-  // Se uno dei due o entrambi sono nulli ritorna
+  // Se uno dei due o entrambi non sono nulli ritorna
   if (item->next || item->prev) return 0;
 
 #ifdef _LIST_DEBUG_

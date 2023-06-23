@@ -20,6 +20,9 @@ int FakePCB_loadProcessInfo(FakePCB* p, const char* filename) {
   p->list.next=p->list.prev=0;
   List_init(&p->events);
   p->list.prev=p->list.next=0;
+  p->first_cpu_burst=0;
+  p->response_chunk_start=0;
+  p->waiting_chunk_start=0;
 
   // Numero totale di eventi da ritornare al chiamante
   int num_events=0;

@@ -4,7 +4,7 @@
 #include "fake_os.h"
 
 // Inizializza l'OS e assegna il numero di processori disponibili
-void FakeOS_init(FakeOS* os, int num_of_cpu, short scheduler_id, ScheduleFn scheduler_fn) {
+void FakeOS_init(FakeOS* os, int num_of_cpu, int scheduler_id, ScheduleFn scheduler_fn) {
   os->running=(FakePCB**)malloc(sizeof(FakePCB*)*num_of_cpu);
   List_init(&os->ready);
   List_init(&os->waiting);
@@ -20,15 +20,37 @@ void FakeOS_init(FakeOS* os, int num_of_cpu, short scheduler_id, ScheduleFn sche
       break;
     case 1:
       os->scheduler_fn=scheduler_fn;
-      SchedArgsPSJFQP* scheduler_args=(SchedArgsPSJFQP*)malloc(sizeof(SchedArgsPSJFQP));
-      scheduler_args->quantum=10;
-      scheduler_args->decay_coefficient=0.5;
-      os->scheduler_args=scheduler_args;
+      SchedArgsPSJFQP* psjfqp_scheduler_args=(SchedArgsPSJFQP*)malloc(sizeof(SchedArgsPSJFQP));
+      psjfqp_scheduler_args->quantum=10;
+      psjfqp_scheduler_args->decay_coefficient=0.5;
+      os->scheduler_args=psjfqp_scheduler_args;
+      break;
+    case 2:
+      os->scheduler_fn=scheduler_fn;
+      SchedArgsRR* rr_scheduler_args=(SchedArgsRR*)malloc(sizeof(SchedArgsRR));
+      rr_scheduler_args->quantum=5;
+      os->scheduler_args=rr_scheduler_args;
       break;
   }
 
   List_init(&os->processes);
 }
+
+// Inizializza la struttura contenente le metriche dello scheduler
+void SimCard_init(FakeOS* os, SimCard* sm) {
+  sm->list.prev=sm->list.next=0;
+  sm->procs_count=0;
+
+  sm->throughput=0;
+
+  sm->cpu_work=(float*)malloc(sizeof(float)*os->num_of_cpu);
+  for (int i=0;i<os->num_of_cpu;i++) sm->cpu_work[i]=0;
+
+  sm->avg_turnaround_time=0;
+  sm->avg_response_time=0;
+  sm->avg_waiting_time=0;
+}
+
 
 
 // Inserire i PCB nella lista di ready in ordine di stima della durata del loro prossimo Burst
@@ -72,14 +94,15 @@ void FakeOS_SortedInsertInReady(ListHead* ready, FakePCB* pcb_to_insert) {
 }
 
 
+
 // Se il PCB "p" passa i controlli viene inserito nella lista opportuna (ready/waiting) dell'OS
 void FakeOS_createProcess(FakeOS* os, FakePCB* p) {
   // Il processo deve effettivamente avere il tempo di arrivo corrente
   assert((p->arrival_time==os->timer) && "time mismatch in creation");
   // Il processo deve avere almeno un evento
   assert(p->events.first && "process without events");
-  // Il pid non deve essere uguale a quello degli eventuali processi in running
-  for (int i=0;i<os->num_of_cpu;i++) { assert((!(os->running[i]) || ((os->running[i])->pid!=p->pid)) && "pid taken"); }
+  // Controlla che non ci sia gia il pid tra gli eventuali processi in running
+  for (int i=0;i<os->num_of_cpu;i++) assert((!(os->running[i]) || ((os->running[i])->pid!=p->pid)) && "pid taken");
 
   // Controlla che non ci sia gia il pid tra i processi nella coda di ready
   ListItem* aux=os->ready.first;
@@ -101,10 +124,15 @@ void FakeOS_createProcess(FakeOS* os, FakePCB* p) {
   ProcessEvent* e=(ProcessEvent*)p->events.first;
   switch(os->scheduler_id) {
     case 0:
-      // Assegnazione in ready
-      if (e->type==CPU) List_pushBack(&os->ready, (ListItem*) p);
+      // Assegnazione in ready e registra l'inizio di un chunk di waiting
+      if (e->type==CPU) { printf(" - first event: CPU Burst --> moving to ready list");
+        p->waiting_chunk_start=os->timer;
+        List_pushBack(&os->ready, (ListItem*) p);
+      }
       // Assegnazione in waiting
-      else if (e->type==IO) List_pushBack(&os->waiting, (ListItem*) p);
+      else if (e->type==IO) { printf(" - first event: IO Burst --> moving to waiting list");
+        List_pushBack(&os->waiting, (ListItem*) p);
+      }
       // Errore
       else assert(0 && "illegal resource");
       break;
@@ -112,10 +140,28 @@ void FakeOS_createProcess(FakeOS* os, FakePCB* p) {
       p->chunk_start_recorder=0;
       p->chunk_duration_sum=0;
       p->predicted_duration=((SchedArgsPSJFQP*)(os->scheduler_args))->quantum;
-      // Assegnazione ordinata in ready
-      if (e->type==CPU) FakeOS_SortedInsertInReady(&os->ready, p);
+      // Assegnazione ordinata in ready e registra l'inizio di un chunk di waiting
+      if (e->type==CPU) { printf(" - first event: CPU Burst --> moving to ready list");
+        p->waiting_chunk_start=os->timer;
+        FakeOS_SortedInsertInReady(&os->ready, p);
+      }
       // Assegnazione in waiting
-      else if (e->type==IO) List_pushBack(&os->waiting, (ListItem*) p);
+      else if (e->type==IO) { printf(" - first event: IO Burst --> moving to waiting list");
+        List_pushBack(&os->waiting, (ListItem*) p);
+      }
+      // Errore
+      else assert(0 && "illegal resource");
+      break;
+    case 2:
+      // Assegnazione in ready e registra l'inizio di un chunk di waiting
+      if (e->type==CPU) { printf(" - first event: CPU Burst --> moving to ready list");
+        p->waiting_chunk_start=os->timer;
+        List_pushBack(&os->ready, (ListItem*) p);
+      }
+      // Assegnazione in waiting
+      else if (e->type==IO) { printf(" - first event: IO Burst --> moving to waiting list");
+        List_pushBack(&os->waiting, (ListItem*) p);
+      }
       // Errore
       else assert(0 && "illegal resource");
       break;
@@ -123,9 +169,12 @@ void FakeOS_createProcess(FakeOS* os, FakePCB* p) {
 }
 
 
+
 // Simula il passaggio di una unità di tempo assoluto dell'OS
-void FakeOS_simStep(FakeOS* os){
-  printf("\n\nTime: %04d -------------------------------------------------------", os->timer);
+void FakeOS_simStep(FakeOS* os, SimCard* sm){
+  printf("\n\n"
+  "Time: %04d_____________________________________________________________________________________\n|                                                                                              |",
+  os->timer);
 
   // Controlla se sono arrivati nuovi processi e li crea
   ListItem* list_iter=os->processes.first;
@@ -133,19 +182,21 @@ void FakeOS_simStep(FakeOS* os){
     FakePCB* proc_iter=(FakePCB*)list_iter;
     list_iter=list_iter->next;
     if (proc_iter->arrival_time==os->timer) {
-      printf("\nCreating process... pid:%d", proc_iter->pid);
+      printf("\n| Process arrived - pid:%d", proc_iter->pid);
       FakePCB* new_process=(FakePCB*)List_detach(&os->processes, (ListItem*)proc_iter);
       FakeOS_createProcess(os, new_process);
+      sm->procs_count++;
     }
   }
-  printf("\n");
 
   // Chiama lo scheduler (se è stato impostato)
   if (os->scheduler_fn) (*os->scheduler_fn)();
 
   os->timer++;
-  printf("\n------------------------------------------------------------------\n");
+  printf("\n|______________________________________________________________________________________________|\n\n\n");
 }
+
+
 
 
 // Libera lo spazio dell'OS

@@ -24,3 +24,6 @@ sched_sim:	sched_sim.c $(OBJS)
 
 clean:
 	rm -rf *.o *~ $(OBJS) $(BINS)
+
+rsim:
+	rm -rf Sim*
