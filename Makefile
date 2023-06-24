@@ -2,28 +2,43 @@ CC=gcc
 CCOPTS=--std=gnu99 -Wall -D_LIST_DEBUG_
 AR=ar
 
-OBJS= linked_list/linked_list.o\
-      fake_process/fake_process.o\
-      fake_os/fake_os.o
+# Oggetto ed Headers per hist_to_proc
+OBJS_HIST=    linked_list/linked_list.o   fake_process/fake_process.o   hist_utils/hist_utils.o
+HEADERS_HIST= linked_list/linked_list.h   fake_process/fake_process.h   hist_utils/hist_utils.h
 
-HEADERS= linked_list/linked_list.h\
-         fake_process/fake_process.h\
-         fake_os/fake_os.h
+# Oggetto ed Headers per sched_sim
+OBJS_SHED=    linked_list/linked_list.o   fake_process/fake_process.o   fake_os/fake_os.o
+HEADERS_SHED= linked_list/linked_list.h   fake_process/fake_process.h   fake_os/fake_os.h
 
-BINS= sched_sim
+BINS= sched_sim hist_to_proc
 
 .phony: clean all
 
 all:	$(BINS)
 
-%.o:	%.c $(HEADERS)
+%.o:	%.c $(HEADERS_HIST)
 	$(CC) $(CCOPTS) -c -o $@  $<
 
-sched_sim:	sched_sim.c $(OBJS)
+%.o:	%.c $(HEADERS_SHED)
+	$(CC) $(CCOPTS) -c -o $@  $<
+
+sched_sim:	sched_sim.c $(OBJS_SHED)
 	$(CC) $(CCOPTS) -o $@ $^
 
+hist_to_proc:	hist_to_proc.c $(OBJS_HIST)
+	$(CC) $(CCOPTS) -o $@ $^
+
+# Rimuove file oggtto ed eseguibili
 clean:
 	rm -rf *.o *~ $(OBJS) $(BINS)
 
+# Rimuove i salvataggi delle simulazioni
 rsim:
 	rm -rf Sim*
+
+# Rimuove i file dei processi generati dagli istogrammi associati
+rmhp:
+	rm -rf histo_processes_files/hp*
+
+run:
+	./hist_to_proc histogram_files/h*.txt ; ./sched_sim histo_processes_files/hp*

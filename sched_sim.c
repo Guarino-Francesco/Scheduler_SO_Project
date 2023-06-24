@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <errno.h>
 #include <string.h>
 #include "fake_os/fake_os.h"
 
@@ -438,7 +437,7 @@ void SimCard_print() {
   sim_card.num_of_cpu,
   sim_card.sim_duration,
   sim_card.throughput);
-  for (int i=0;i<sim_card.num_of_cpu;i++) printf("\n|  CPU(%d): [%6.2f%c]                   |", i, sim_card.cpu_work[i], 37);
+  for (int i=0;i<sim_card.num_of_cpu;i++) printf("\n|  CPU(%03d): [%6.2f%c]                 |", i, sim_card.cpu_work[i], 37);
   printf("\n"
   "|______________________________________|\n"
   "|Average times:                        |\n"
@@ -471,7 +470,7 @@ void SimCard_fprint(const char* filename) {
   sim_card.num_of_cpu,
   sim_card.sim_duration,
   sim_card.throughput);
-  for (int i=0;i<sim_card.num_of_cpu;i++) fprintf(f, "\n|  CPU(%d): [%6.2f%c]                   |", i, sim_card.cpu_work[i], 37);
+  for (int i=0;i<sim_card.num_of_cpu;i++) fprintf(f, "\n|  CPU(%03d): [%6.2f%c]                 |", i, sim_card.cpu_work[i], 37);
   fprintf(f, "\n"
   "|______________________________________|\n"
   "|Average times:                        |\n"

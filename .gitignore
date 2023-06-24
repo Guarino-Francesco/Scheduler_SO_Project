@@ -1,6 +1,10 @@
+histo_processes_files/hp*
+
 Sim*
-IpotesiStampeDimostrative.txt
+
 fake_os/fake_os.o
 fake_process/fake_process.o
 linked_list/linked_list.o
+
 sched_sim
+hist_to_proc
