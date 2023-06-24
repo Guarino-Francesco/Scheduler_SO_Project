@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   // Richiede la tipologia di scheduler
   int scheduler_id;
   printf("\n\n"
-  " _____________________"
+  " _____________________\n"
   "| Available scheduler |\n"
   "_______________________________________________________________________________ \n"
   "|ID:0 = FIFO   - First In First Out                                            |\n"
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
     // Se il controllo non va a buon fine termina la simulazione
     else break;
 
-  } printf("Simulation ended\n");
+  } printf("Simulation ended\n\n\nSIMULATION RESULTS");
 
 
 

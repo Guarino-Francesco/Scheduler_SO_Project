@@ -40,14 +40,14 @@ int main(int argc, char** argv) {
     // Errore nell'apertura del file
     if (res==-1) { printf("Errore durante l'apertura del file.\n"); continue; }
     else {
-      printf("\n _________________________________________________________________________________________%s\n|File: %s", (res==1)?"_____":"", argv[i]);
-      if (res==1) { printf(" | Not Loaded. Require at least 1 record per burst type (CPU/IO). |\n|______________________________________________________________________________________________|\n");
+      printf("\n\nFILE: %s", argv[i]);
+      if (res==1) { printf(" - Not Loaded. Require at least 1 record per burst type (CPU/IO). |\n\n");
                     continue; }
-      else printf(" | Loaded. CPU records: %02d, IO records: %02d", cpu_records, io_records);
+      else printf(" - Loading...\nCPU records: %02d, IO records: %02d", cpu_records, io_records);
     }
 
     // Genera un arrival time random in range [0:ARRARRIVAL_UPPER_LIMIT)
-    int arrival_time=(((float) rand()/RAND_MAX)*ARRIVAL_UPPER_LIMIT);printf(" | Arrival time: %02d|", arrival_time);
+    int arrival_time=(((float) rand()/RAND_MAX)*ARRIVAL_UPPER_LIMIT);printf(" - Arrival time: %02d", arrival_time);
 
     // Stampa degli array (cumulativo e di distribuzione)
     printf("\n|___________________________________________________________________________________________________\n| CPU: ");
@@ -123,5 +123,5 @@ int main(int argc, char** argv) {
     current_pid++;
   }
 
-  printf("\nCheck 'histo_processes_files' for the results\nExiting...\n");
+  printf("\nCheck 'histo_processes_files' for the results\n\nExiting...\n");
 }

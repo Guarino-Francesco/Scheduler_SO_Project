@@ -41,4 +41,4 @@ rmhp:
 	rm -rf histo_processes_files/hp*
 
 run:
-	./hist_to_proc histogram_files/h*.txt ; ./sched_sim histo_processes_files/hp*
+	reset ; make clean ; make ; ./hist_to_proc histogram_files/h*.txt ; ./sched_sim histo_processes_files/hp*
