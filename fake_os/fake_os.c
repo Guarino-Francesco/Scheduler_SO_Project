@@ -190,7 +190,7 @@ void FakeOS_simStep(FakeOS* os, SimCard* sm){
   }
 
   // Chiama lo scheduler (se è stato impostato)
-  if (os->scheduler_fn) (*os->scheduler_fn)();
+  if (os->scheduler_fn) (*os->scheduler_fn)(os, sm);
 
   os->timer++;
   printf("\n|______________________________________________________________________________________________|\n\n\n");

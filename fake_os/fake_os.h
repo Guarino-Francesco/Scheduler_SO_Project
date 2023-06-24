@@ -1,8 +1,6 @@
 #pragma once
 #include "../fake_process/fake_process.h"
 
-typedef void (*ScheduleFn)();
-
 typedef struct {
   ListItem list;             // Struct della quale ShedMetrics è ereditaria
   int sim_duration;          // Durata della simulazione
@@ -13,11 +11,17 @@ typedef struct {
   float throughput;          // Numero di processi terminati per uinità di tempo
 
   float* cpu_work;           // Array che inizialmente contiene all'indice i quante unità di tempo la CPU(i) è stata utilizzata. Successivamente dividendo per la durata della simulazione conterrà la % di utilizzo della CPU(i)
+  float avg_work;            // Media di utilizzo tra le CPU
 
   float avg_turnaround_time; // Inizialmente contiene la somma dei tempi di turnaround. Successivamente dividendo per process_counter conterrà la media
   float avg_response_time;   // Inizialmente contiene la somma dei tempi di response. Successivamente dividendo per process_counter conterrà la media
   float avg_waiting_time;    // Inizialmente contiene la somma dei tempi di waiting. Successivamente dividendo per process_counter conterrà la media
 } SimCard;
+
+
+
+
+typedef void (*ScheduleFn)();
 
 typedef struct {
   int quantum;             // Quanto di tempo per l'interruzione preemptive dei running
@@ -27,6 +31,10 @@ typedef struct {
   int quantum;             // Quanto di tempo per l'interruzione preemptive dei running
   float decay_coefficient; // Coefficiente di decadimento utilizzato nella stima della durata del prossimo Burst
 } SchedArgsPSJFQP;
+
+
+
+
 
 typedef struct FakeOS{
   FakePCB** running;       // Array contente all'indice "i" l'eventuale FakePCB in running sulla i-esima CPU

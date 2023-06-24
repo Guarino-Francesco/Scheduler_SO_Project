@@ -7,8 +7,8 @@ OBJS_HIST=    linked_list/linked_list.o   fake_process/fake_process.o   hist_uti
 HEADERS_HIST= linked_list/linked_list.h   fake_process/fake_process.h   hist_utils/hist_utils.h
 
 # Oggetto ed Headers per sched_sim
-OBJS_SHED=    linked_list/linked_list.o   fake_process/fake_process.o   fake_os/fake_os.o
-HEADERS_SHED= linked_list/linked_list.h   fake_process/fake_process.h   fake_os/fake_os.h
+OBJS_SHED=    linked_list/linked_list.o   fake_process/fake_process.o   fake_os/fake_os.o   sched_sim_utils/scheduler.o sched_sim_utils/sim_card.o
+HEADERS_SHED= linked_list/linked_list.h   fake_process/fake_process.h   fake_os/fake_os.h   sched_sim_utils/sched_sim.h
 
 BINS= sched_sim hist_to_proc
 

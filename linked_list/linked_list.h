@@ -1,9 +1,11 @@
 #pragma once
 
+
 typedef struct ListItem {
   struct ListItem* prev; // Puntatore all'elemento precedente nella lista (NULL se siamo nel primo elemento)
   struct ListItem* next; // Puntatore all'elemento successivo nella lista (NULL se siamo nell'ultimo elemento)
 } ListItem;
+
 
 
 typedef struct ListHead {
@@ -11,6 +13,7 @@ typedef struct ListHead {
   ListItem* last;  // Puntatore all'ultimo elemento della lista
   int size;        // Numero di elementi nella lista
 } ListHead;
+
 
 
 void List_init(ListHead* head);

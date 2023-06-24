@@ -10,6 +10,7 @@ typedef struct {
 } ProcessEvent;
 
 
+
 typedef struct {
   ListItem list;            // Struct della quale FakePCB è ereditaria
   int pid;                  // Process ID (letto dal file descrittivo)
@@ -25,6 +26,7 @@ typedef struct {
 
   ListHead events;          // Lista dei ProcessEvent associati al processo
 } FakePCB;
+
 
 
 int FakePCB_loadProcessInfo(FakePCB* p, const char* filename);
