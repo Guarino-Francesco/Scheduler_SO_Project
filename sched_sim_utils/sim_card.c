@@ -1,10 +1,11 @@
 #include "sched_sim.h"
 
+
 // Stampa i risultati e le metriche della simulazione sm
 void SimCard_Print(SimCard* sim_card) {
 
   printf("\n\n"
-  "________________________________________\n"
+  " ______________________________________ \n"
   "|Scheduler: %s\n"
   "|Available CPU: %d - Duration: %d\n"
   "|______________________________________|\n"
@@ -17,7 +18,9 @@ void SimCard_Print(SimCard* sim_card) {
   sim_card->sim_duration,
   sim_card->throughput,
   sim_card->avg_work, 37);
+
   for (int i=0;i<sim_card->num_of_cpu;i++) printf("\n|  CPU[%03d]:%6.2f%c                    |", i, sim_card->cpu_work[i], 37);
+
   printf("\n"
   "|______________________________________|\n"
   "|Average times:                        |\n"
@@ -38,7 +41,7 @@ void SimCard_SaveOnFile(SimCard* sim_card, char* filename) {
   assert(f && "Error open file");
 
   fprintf(f,
-  "________________________________________\n"
+  " ______________________________________ \n"
   "|Scheduler: %s\n"
   "|Available CPU: %d - Duration: %d\n"
   "|______________________________________|\n"
@@ -51,7 +54,9 @@ void SimCard_SaveOnFile(SimCard* sim_card, char* filename) {
   sim_card->sim_duration,
   sim_card->throughput,
   sim_card->avg_work, 37);
+
   for (int i=0;i<sim_card->num_of_cpu;i++) fprintf(f, "\n|  CPU[%03d]:%6.2f%c                    |", i, sim_card->cpu_work[i], 37);
+
   fprintf(f, "\n"
   "|______________________________________|\n"
   "|Average times:                        |\n"
@@ -93,7 +98,7 @@ void SimCard_SaveAndPrint(SimCard* sim_card, FakeOS* os) {
   SimCard_SaveOnFile(sim_card, "SimulationsSummary");
 
   // Salvataggio su file della singola simulazione
-  char filename[50]; sprintf(filename, "SimSched %s #CPU %03d",
+  char filename[50]; sprintf(filename, "SimSched %s #CPU %3d",
     (sim_card->scheduler_id==2)? "RR":
     (sim_card->scheduler_id==1)? "PSJFQP":"FIFO",
     sim_card->num_of_cpu);

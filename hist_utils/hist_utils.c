@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "hist_utils.h"
 
-#define LINE_LENGTH 1024
-
 int Hist_loadRecords(int* cpu_distribution, int* io_distribution, int* cpu_cumulative, int* io_cumulative, int* cpu_records, int* io_records, const char* filename) {
   // Apre il file designato in lettura e ritorna se c'è errore
   FILE* f=fopen(filename, "r");

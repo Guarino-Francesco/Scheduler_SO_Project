@@ -4,34 +4,13 @@
 #include "fake_os.h"
 
 // Inizializza l'OS e assegna il numero di processori disponibili
-void FakeOS_init(FakeOS* os, int num_of_cpu, int scheduler_id, ScheduleFn scheduler_fn) {
+void FakeOS_init(FakeOS* os, int num_of_cpu) {
   os->running=(FakePCB**)malloc(sizeof(FakePCB*)*num_of_cpu);
   List_init(&os->ready);
   List_init(&os->waiting);
 
   os->timer=0;
   os->num_of_cpu=num_of_cpu;
-  os->scheduler_id=scheduler_id;
-
-  switch (scheduler_id) {
-    case 0:
-      os->scheduler_fn=scheduler_fn;
-      os->scheduler_args=0;
-      break;
-    case 1:
-      os->scheduler_fn=scheduler_fn;
-      SchedArgsPSJFQP* psjfqp_scheduler_args=(SchedArgsPSJFQP*)malloc(sizeof(SchedArgsPSJFQP));
-      psjfqp_scheduler_args->quantum=10;
-      psjfqp_scheduler_args->decay_coefficient=0.5;
-      os->scheduler_args=psjfqp_scheduler_args;
-      break;
-    case 2:
-      os->scheduler_fn=scheduler_fn;
-      SchedArgsRR* rr_scheduler_args=(SchedArgsRR*)malloc(sizeof(SchedArgsRR));
-      rr_scheduler_args->quantum=5;
-      os->scheduler_args=rr_scheduler_args;
-      break;
-  }
 
   List_init(&os->processes);
 }
@@ -173,7 +152,7 @@ void FakeOS_createProcess(FakeOS* os, FakePCB* p) {
 // Simula il passaggio di una unità di tempo assoluto dell'OS
 void FakeOS_simStep(FakeOS* os, SimCard* sm){
   printf("\n\n"
-  "Time: %04d_____________________________________________________________________________________\n|                                                                                              |",
+  "Time: %4d_____________________________________________________________________________________\n|                                                                                              |",
   os->timer);
 
   // Controlla se sono arrivati nuovi processi e li crea
@@ -195,7 +174,6 @@ void FakeOS_simStep(FakeOS* os, SimCard* sm){
   os->timer++;
   printf("\n|______________________________________________________________________________________________|\n\n\n");
 }
-
 
 
 

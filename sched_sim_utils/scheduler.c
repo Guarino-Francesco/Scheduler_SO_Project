@@ -1,9 +1,8 @@
 #include "sched_sim.h"
 
 
-// Scheduler RR (Round Robin)
-void scheduler_RR(FakeOS* os, SimCard* sim_card) {
-  SchedArgsRR* scheduler_args=(SchedArgsRR*)os->scheduler_args;
+// Scheduler FIFO (First In First Out)
+void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
 
   // Controlla lo stato dei processi in waiting e li aggiorna di conseguenza
   ListItem* aux=os->waiting.first;
@@ -30,7 +29,7 @@ void scheduler_RR(FakeOS* os, SimCard* sim_card) {
       else {
         e=(ProcessEvent*) pcb->events.first;
 
-        // Assegnazione ordinata in ready
+        // Assegnazione in ready
         if (e->type == CPU) { printf(" - next event: CPU Burst --> moving to ready list");
           pcb->waiting_chunk_start=os->timer;
           pcb->response_chunk_start=os->timer;
@@ -45,7 +44,7 @@ void scheduler_RR(FakeOS* os, SimCard* sim_card) {
       }
     }
     // Altrimenti procede con gli altri processi
-    else printf("ending in %02d", e->duration);
+    else printf("ending in %2d", e->duration);
   } printf("\n|");
 
   // Controlla lo stato dei processi in running e li aggiorna di conseguenza
@@ -73,7 +72,7 @@ void scheduler_RR(FakeOS* os, SimCard* sim_card) {
         else {
           e=(ProcessEvent*) current_running->events.first;
 
-          // Assegnazione ordinata in ready
+          // Assegnazione in ready
           if (e->type == CPU){ printf(" - next event: CPU Burst --> moving to ready list");
             current_running->waiting_chunk_start=os->timer;
             List_pushBack(&os->ready, (ListItem*) current_running);
@@ -90,7 +89,7 @@ void scheduler_RR(FakeOS* os, SimCard* sim_card) {
         os->running[i] = 0;
       }
       // Altrimenti procede
-      else printf("ending in %02d", e->duration);
+      else printf("ending in %2d", e->duration);
     }
 
   } printf("\n|");
@@ -121,25 +120,11 @@ void scheduler_RR(FakeOS* os, SimCard* sim_card) {
       // L'evento deve essere di tipo CPU
       assert(e->type==CPU);
 
-      // Controlla ed eventualmente modifica l'evento per far si che possa rispettare il quantum
       printf("\n| Starting pid %d on CPU(%d) - event duration from the file: %d", pcb->pid, i, e->duration);
-      if (e->duration>scheduler_args->quantum) {
-
-        // Nuovo evento di durata quantum
-        ProcessEvent* qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
-        qe->list.prev=qe->list.next=0;
-        qe->type=CPU;
-        qe->duration=scheduler_args->quantum;
-
-        // Modifica l'evento originale dove rimane lo scarto della durata
-        e->duration-=scheduler_args->quantum;
-        List_pushFront(&pcb->events, (ListItem*)qe);
-      }
-
     }
   }
 
-}
+};
 
 // Scheduler PSJFQP (Preemptive Shortest Job First with Quantum Prediction)
 void scheduler_P_SJF_QP(FakeOS* os, SimCard* sim_card) {
@@ -185,7 +170,7 @@ void scheduler_P_SJF_QP(FakeOS* os, SimCard* sim_card) {
       }
     }
     // Altrimenti procede con gli altri processi
-    else printf("ending in %02d - predicted duration: %f", e->duration, pcb->predicted_duration);
+    else printf("ending in %2d - predicted duration: %f", e->duration, pcb->predicted_duration);
   } printf("\n|");
 
   // Controlla lo stato dei processi in running e li aggiorna di conseguenza
@@ -234,7 +219,7 @@ void scheduler_P_SJF_QP(FakeOS* os, SimCard* sim_card) {
         os->running[i] = 0;
       }
       // Altrimenti procede
-      else printf("ending in %02d", e->duration);
+      else printf("ending in %2d", e->duration);
     }
 
   } printf("\n|");
@@ -286,8 +271,9 @@ void scheduler_P_SJF_QP(FakeOS* os, SimCard* sim_card) {
 
 };
 
-// Scheduler FIFO (First In First Out)
-void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
+// Scheduler RR (Round Robin)
+void scheduler_RR(FakeOS* os, SimCard* sim_card) {
+  SchedArgsRR* scheduler_args=(SchedArgsRR*)os->scheduler_args;
 
   // Controlla lo stato dei processi in waiting e li aggiorna di conseguenza
   ListItem* aux=os->waiting.first;
@@ -314,7 +300,7 @@ void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
       else {
         e=(ProcessEvent*) pcb->events.first;
 
-        // Assegnazione in ready
+        // Assegnazione ordinata in ready
         if (e->type == CPU) { printf(" - next event: CPU Burst --> moving to ready list");
           pcb->waiting_chunk_start=os->timer;
           pcb->response_chunk_start=os->timer;
@@ -329,7 +315,7 @@ void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
       }
     }
     // Altrimenti procede con gli altri processi
-    else printf("ending in %02d", e->duration);
+    else printf("ending in %2d", e->duration);
   } printf("\n|");
 
   // Controlla lo stato dei processi in running e li aggiorna di conseguenza
@@ -357,7 +343,7 @@ void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
         else {
           e=(ProcessEvent*) current_running->events.first;
 
-          // Assegnazione in ready
+          // Assegnazione ordinata in ready
           if (e->type == CPU){ printf(" - next event: CPU Burst --> moving to ready list");
             current_running->waiting_chunk_start=os->timer;
             List_pushBack(&os->ready, (ListItem*) current_running);
@@ -374,7 +360,7 @@ void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
         os->running[i] = 0;
       }
       // Altrimenti procede
-      else printf("ending in %02d", e->duration);
+      else printf("ending in %2d", e->duration);
     }
 
   } printf("\n|");
@@ -405,9 +391,22 @@ void scheduler_FIFO(FakeOS* os, SimCard* sim_card) {
       // L'evento deve essere di tipo CPU
       assert(e->type==CPU);
 
+      // Controlla ed eventualmente modifica l'evento per far si che possa rispettare il quantum
       printf("\n| Starting pid %d on CPU(%d) - event duration from the file: %d", pcb->pid, i, e->duration);
+      if (e->duration>scheduler_args->quantum) {
+
+        // Nuovo evento di durata quantum
+        ProcessEvent* qe=(ProcessEvent*)malloc(sizeof(ProcessEvent));
+        qe->list.prev=qe->list.next=0;
+        qe->type=CPU;
+        qe->duration=scheduler_args->quantum;
+
+        // Modifica l'evento originale dove rimane lo scarto della durata
+        e->duration-=scheduler_args->quantum;
+        List_pushFront(&pcb->events, (ListItem*)qe);
+      }
+
     }
   }
 
-};
-
+}

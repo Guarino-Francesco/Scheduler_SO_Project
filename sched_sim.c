@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
   if (argc==1) { printf("\nUsage: ./sched_sim [PROCESS DESCRIPTION FILE PATH 1] [PROCESS DESCRIPTION FILE PATH 2] ... [PROCESS DESCRIPTION FILE PATH n]\n"); return 0; }
 
 
+  // RICHIESTE DI DATI IN INPUT PER L'INIZIALIZZAZIONE ______________________________________________________________________________
   printf("\n\n______________________________________________________________________________________\n"
              "### INITIALIZING A NEW SIMULATION ####################################################\n");
 
@@ -46,30 +47,53 @@ int main(int argc, char** argv) {
       if (c == EOF) return 0;
   }
 
-  // Inizializza l'OS e la Simulazione
-  ScheduleFn scheduler_fn;
+  // ________________________________________________________________________________________________________________________________
+  // ################################################################################################################################
+
+
+
+
+  // INIZIALIZZAZIONE DI SCHEDULER, OS e SIMULAZIONE ________________________________________________________________________________
+
+  // Inizializza la funzione di scheduler e gli argomenti del relativo scheduler all'interno dell'os
   printf("\nSelected scheduler: ");
+  os.scheduler_id=scheduler_id;
   switch (scheduler_id) {
     case 0:
-      printf("FIFO - First In First Out\n");
-      scheduler_fn = scheduler_FIFO;
+      printf("FIFO - First In First Out");
+      os.scheduler_fn = scheduler_FIFO;
+      os.scheduler_args=0;
       break;
     case 1:
-      printf("PSJFQP - Preemptive Shortest Job First with Quantum Prediction\n");
-      scheduler_fn = scheduler_P_SJF_QP;
+      printf("PSJFQP - Preemptive Shortest Job First with Quantum Prediction");
+      os.scheduler_fn = scheduler_P_SJF_QP;
+      SchedArgsPSJFQP* psjfqp_scheduler_args=(SchedArgsPSJFQP*)malloc(sizeof(SchedArgsPSJFQP));
+      psjfqp_scheduler_args->quantum=10;
+      psjfqp_scheduler_args->decay_coefficient=0.5;
+      os.scheduler_args=psjfqp_scheduler_args;
       break;
     case 2:
-      printf("RR - Round Robin\n");
-      scheduler_fn = scheduler_RR;
+      printf("RR - Round Robin");
+      os.scheduler_fn = scheduler_RR;
+      SchedArgsRR* rr_scheduler_args=(SchedArgsRR*)malloc(sizeof(SchedArgsRR));
+      rr_scheduler_args->quantum=5;
+      os.scheduler_args=rr_scheduler_args;
       break;
   } printf("\nNumber of available CPU: %d\n", number_of_cpu);
+
   // Inizializza l'OS
-  FakeOS_init(&os, number_of_cpu, scheduler_id, scheduler_fn);
+  FakeOS_init(&os, number_of_cpu);
+
   // Inizializza il record delle metriche
   SimCard_init(&os, &sim_card);
 
+  // ________________________________________________________________________________________________________________________________
+  // ################################################################################################################################
 
 
+
+
+  // CARICAMENTO ____________________________________________________________________________________________________________________
   // Caricamento dei processi descritti nei file forniti da linea di comando
   int refused = 0;
   printf("\nLoading processes description files:\n");
@@ -81,7 +105,7 @@ int main(int argc, char** argv) {
     // Errore nell'aperture del file
     if (num_events==-1) printf("Errore durante l'apertura del file.\n");
     else {
-      printf("file: %s - pid: %d - number of events: %02d", argv[i], new_process->pid, num_events);
+      printf("file: %30s - pid: %3d - number of events: %3d", argv[i], new_process->pid, num_events);
 
       // Inserimento nella lista dei processi del sistema operativo
       if (num_events) { List_pushBack(&os.processes, (ListItem*)new_process); printf(" - loading...\n"); }
@@ -91,8 +115,13 @@ int main(int argc, char** argv) {
 
   printf("\nProcesses:\nLoaded: %d\nRefused: %d\n\nStarting simulation:", os.processes.size, refused);
 
+  // ________________________________________________________________________________________________________________________________
+  // ################################################################################################################################
 
 
+
+
+  // AVVIO __________________________________________________________________________________________________________________________
   // Avvio del sistema procedendo step by step fino a quando non terminano tutti i processi caricati
   while(1){
 
@@ -108,6 +137,10 @@ int main(int argc, char** argv) {
     else break;
 
   } printf("Simulation ended\n\n\nSIMULATION RESULTS");
+
+  // ________________________________________________________________________________________________________________________________
+  // ################################################################################################################################
+
 
 
 

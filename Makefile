@@ -16,8 +16,14 @@ BINS= sched_sim hist_to_proc
 
 all:	$(BINS)
 
+
 %.o:	%.c $(HEADERS_HIST)
 	$(CC) $(CCOPTS) -c -o $@  $<
+
+hist_to_proc:	hist_to_proc.c $(OBJS_HIST)
+	$(CC) $(CCOPTS) -o $@ $^
+
+
 
 %.o:	%.c $(HEADERS_SHED)
 	$(CC) $(CCOPTS) -c -o $@  $<
@@ -25,8 +31,7 @@ all:	$(BINS)
 sched_sim:	sched_sim.c $(OBJS_SHED)
 	$(CC) $(CCOPTS) -o $@ $^
 
-hist_to_proc:	hist_to_proc.c $(OBJS_HIST)
-	$(CC) $(CCOPTS) -o $@ $^
+
 
 # Rimuove file oggtto ed eseguibili
 clean:
@@ -41,4 +46,4 @@ rmhp:
 	rm -rf histo_processes_files/hp*
 
 run:
-	reset ; make clean ; make ; ./hist_to_proc histogram_files/h*.txt ; ./sched_sim histo_processes_files/hp*
+	reset ; make clean ; make ; ./hist_to_proc 3 histogram_files/h*.txt ; ./sched_sim histo_processes_files/hp*

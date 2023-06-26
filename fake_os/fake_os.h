@@ -52,7 +52,7 @@ typedef struct FakeOS{
 } FakeOS;
 
 
-void FakeOS_init(FakeOS* os, int num_of_cpu, int scheduler_id, ScheduleFn scheduler_fn);
+void FakeOS_init(FakeOS* os, int num_of_cpu);
 void SimCard_init(FakeOS* os, SimCard* sm);
 void FakeOS_SortedInsertInReady(ListHead* ready, FakePCB* pcb_to_insert);
 void FakeOS_simStep(FakeOS* os, SimCard* sm);
